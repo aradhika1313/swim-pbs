@@ -2,7 +2,7 @@
   "name": "Swim PBs",
   "short_name": "Swim PBs",
   "description": "Track your swimming personal bests",
-  "start_url": "/",
+  "start_url": "/swim-pbs/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
