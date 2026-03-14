@@ -1,5 +1,5 @@
 const CACHE = 'swim-pbs-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const ASSETS = ['/swim-pbs/', '/swim-pbs/index.html', '/swim-pbs/manifest.json', '/swim-pbs/icon-192.png', '/swim-pbs/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
