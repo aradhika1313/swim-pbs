@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swim PBs</title>
+  <meta name="description" content="Track your swimming personal bests">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Swim PBs">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f5f5f4;
+      --text: #1a1a1a;
+      --text-secondary: #6b6b6b;
+      --text-tertiary: #9ca3af;
+      --border: rgba(0,0,0,0.1);
+      --border-mid: rgba(0,0,0,0.18);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --danger-border: rgba(220,38,38,0.3);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --bg-secondary: #2c2c2e;
+        --text: #f5f5f5;
+        --text-secondary: #ababab;
+        --text-tertiary: #6b6b6b;
+        --border: rgba(255,255,255,0.1);
+        --border-mid: rgba(255,255,255,0.2);
+        --danger-bg: #3b1f1f;
+        --danger-border: rgba(220,38,38,0.4);
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 5rem;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.75rem;
+    }
+
+    .app-header svg { flex-shrink: 0; }
+
+    .app-title {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 2rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 4px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 9px 0;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .nav-btn.active {
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 500;
+      border: 0.5px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .field { margin-bottom: 1.25rem; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    select, input[type="number"], input[type="date"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+      border: 0.5px solid var(--border-mid);
+      border-radius: var(--radius-md);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+    select:focus, input:focus { border-color: var(--text); }
+    select.error, input.error { border-color: var(--danger) !important; background-color: var(--danger-bg); }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .time-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .time-row input { text-align: center; padding: 10px 6px; }
+    .time-sub { font-size: 11px; color: var(--text-tertiary); text-align: center; margin-top: 5px; }
+
+    .save-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius-lg);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.5rem;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .save-btn:active { opacity: 0.85; transform: scale(0.99); }
+
+    .stroke-section { margin-bottom: 2rem; }
+
+    .stroke-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .pb-row {
+      display: flex;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 0.5px solid var(--border);
+      gap: 8px;
+    }
+    .pb-row:last-child { border-bottom: none; }
+
+    .pb-event { font-size: 14px; flex: 1; }
+
+    .pb-pool {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      background: var(--bg-secondary);
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .pb-date { font-size: 12px; color: var(--text-tertiary); }
+
+    .pb-time {
+      font-size: 15px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+    }
+
+    .pb-meta { display: flex; align-items: center; gap: 6px; }
+
+    .del-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      font-size: 18px;
+      line-height: 1;
+      padding: 0 2px;
+      transition: color 0.1s;
+    }
+    .del-btn:hover { color: var(--danger); }
+
+    .empty {
+      text-align: center;
+      padding: 3.5rem 0;
+      color: var(--text-tertiary);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* Modal */
+    .modal-wrap {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-wrap.show { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border-mid);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .modal-body { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem; }
+    .modal-body ul { padding-left: 1.25rem; margin-top: 6px; }
+    .modal-body li { margin-bottom: 3px; }
+
+    .modal-ok {
+      width: 100%;
+      padding: 11px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: var(--bg);
+      padding: 9px 20px;
+      border-radius: var(--radius-lg);
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 300;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="app-header">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M7 16c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M7 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span class="app-title">Swim PBs</span>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('add')">Log PB</button>
+    <button class="nav-btn" onclick="showPage('pbs')">My PBs</button>
+  </div>
+
+  <div id="page-add" class="page active">
+    <p class="page-title">Log a personal best</p>
+
+    <div class="row">
+      <div class="field">
+        <label>Stroke</label>
+        <select id="stroke">
+          <option value="">Select stroke</option>
+          <option>Butterfly</option>
+          <option>Backstroke</option>
+          <option>Breaststroke</option>
+          <option>Frontcrawl</option>
+          <option>Individual medley</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Distance</label>
+        <select id="distance">
+          <option value="">Select distance</option>
+          <option>50m</option>
+          <option>100m</option>
+          <option>200m</option>
+          <option>400m</option>
+          <option>800m</option>
+          <option>1500m</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Pool type</label>
+      <select id="pool">
+        <option value="">Select pool</option>
+        <option>25m (short course)</option>
+        <option>50m (long course)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Time</label>
+      <div class="time-row">
+        <div>
+          <input type="number" id="t-min" min="0" max="59" placeholder="0">
+          <div class="time-sub">min</div>
+        </div>
+        <div>
+          <input type="number" id="t-sec" min="0" max="59" placeholder="00">
+          <div class="time-sub">sec</div>
+        </div>
+        <div>
+          <input type="number" id="t-ms" min="0" max="99" placeholder="00">
+          <div class="time-sub">ms</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="pb-date">
+    </div>
+
+    <button class="save-btn" onclick="savePB()">Save PB</button>
+  </div>
+
+  <div id="page-pbs" class="page">
+    <p class="page-title">Personal bests</p>
+    <div id="pb-list"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-wrap" id="modal-wrap">
+  <div class="modal">
+    <div class="modal-title">Missing a few things</div>
+    <div class="modal-body" id="modal-body"></div>
+    <button class="modal-ok" onclick="closeModal()">Got it</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STROKES = ['Butterfly','Backstroke','Breaststroke','Frontcrawl','Individual medley'];
+const DISTS   = ['50m','100m','200m','400m','800m','1500m'];
+
+function getPBs() { try { return JSON.parse(localStorage.getItem('swim_pbs')||'[]'); } catch(e) { return []; } }
+function setPBs(d) { localStorage.setItem('swim_pbs', JSON.stringify(d)); }
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-btn')[p==='add'?0:1].classList.add('active');
+  if(p==='pbs') renderPBs();
+}
+
+function showModal(missing) {
+  const map = {stroke:'Stroke',distance:'Distance',pool:'Pool type',time:'Time'};
+  document.getElementById('modal-body').innerHTML = 'Please fill in the following:<ul>'+missing.map(m=>`<li>${map[m]}</li>`).join('')+'</ul>';
+  missing.forEach(m => {
+    if(m==='time') ['t-min','t-sec','t-ms'].forEach(id=>document.getElementById(id).classList.add('error'));
+    else { const el=document.getElementById(m); if(el) el.classList.add('error'); }
+  });
+  document.getElementById('modal-wrap').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-wrap').classList.remove('show'); }
+
+['stroke','distance','pool','t-min','t-sec','t-ms'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) { el.addEventListener('change',()=>el.classList.remove('error')); el.addEventListener('input',()=>el.classList.remove('error')); }
+});
+
+function savePB() {
+  const stroke   = document.getElementById('stroke').value;
+  const distance = document.getElementById('distance').value;
+  const pool     = document.getElementById('pool').value;
+  const min      = document.getElementById('t-min').value;
+  const sec      = document.getElementById('t-sec').value;
+  const ms       = document.getElementById('t-ms').value;
+  const date     = document.getElementById('pb-date').value;
+
+  const missing = [];
+  if(!stroke)   missing.push('stroke');
+  if(!distance) missing.push('distance');
+  if(!pool)     missing.push('pool');
+  if(!min && !sec && !ms) missing.push('time');
+  if(missing.length) { showModal(missing); return; }
+
+  const timeStr = `${min||'0'}:${pad(sec||'0')}.${pad(ms||'0')}`;
+  const totalMs = (parseInt(min||0)*60000)+(parseInt(sec||0)*1000)+(parseInt(ms||0)*10);
+  const pbs = getPBs();
+  const idx = pbs.findIndex(p=>p.stroke===stroke&&p.distance===distance&&p.pool===pool);
+  const entry = {stroke,distance,pool,time:timeStr,totalMs,date};
+
+  if(idx>=0) {
+    if(totalMs < pbs[idx].totalMs) { pbs[idx]=entry; }
+    else { if(!confirm(`Current PB for ${distance} ${stroke} is ${pbs[idx].time}. This is slower — save anyway?`)) return; pbs[idx]=entry; }
+  } else { pbs.push(entry); }
+
+  setPBs(pbs);
+  showToast('PB saved!');
+  ['stroke','distance','pool','t-min','t-sec','t-ms'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('pb-date').valueAsDate = new Date();
+}
+
+function deletePB(i) {
+  const pbs=getPBs(); pbs.splice(i,1); setPBs(pbs); renderPBs();
+}
+
+function renderPBs() {
+  const pbs=getPBs();
+  const el=document.getElementById('pb-list');
+  if(!pbs.length) { el.innerHTML='<div class="empty">No PBs yet.<br>Log your first swim!</div>'; return; }
+  const grouped={};
+  STROKES.forEach(s=>{grouped[s]=[];});
+  pbs.forEach((pb,i)=>{ if(grouped[pb.stroke]) grouped[pb.stroke].push({...pb,_i:i}); });
+  let html='';
+  STROKES.forEach(stroke=>{
+    const rows=grouped[stroke]; if(!rows.length) return;
+    rows.sort((a,b)=>DISTS.indexOf(a.distance)-DISTS.indexOf(b.distance));
+    html+=`<div class="stroke-section"><div class="stroke-title">${stroke}</div>`;
+    rows.forEach(pb=>{
+      const shortPool=pb.pool.startsWith('25')?'25m':'50m';
+      const dateStr=pb.date?new Date(pb.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+      html+=`<div class="pb-row">
+        <span class="pb-event">${pb.distance}</span>
+        <div class="pb-meta">
+          <span class="pb-pool">${shortPool}</span>
+          ${dateStr?`<span class="pb-date">${dateStr}</span>`:''}
+          <span class="pb-time">${pb.time}</span>
+          <button class="del-btn" onclick="deletePB(${pb._i})" title="Remove">×</button>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+document.getElementById('pb-date').valueAsDate=new Date();
+
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
